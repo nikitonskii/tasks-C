@@ -17,8 +17,8 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    // Do any additional setup after loading the view.
-    self.items = @[@{@"name": @"Take a shit", @"category": @"Private"}, @{@"name": @"Call mother", @"category": @"Family"}].mutableCopy;
+    [self loadItems];
+
     self.navigationItem.title = @"Todo list";
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:self action:@selector(addNewItem:)];
 }
@@ -43,6 +43,7 @@
         NSDictionary *currentItem = @{@"name": enteredText, @"category": @"Private"};
         [self.items addObject:currentItem];
         [self.tableView insertRowsAtIndexPaths:@[[NSIndexPath indexPathForRow: self.items.count - 1 inSection:0]] withRowAnimation:UITableViewRowAnimationAutomatic];
+        [self saveItems]; // Save items after adding a new one
     }];
     UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
         // Handle the CANCEL button action
@@ -92,8 +93,7 @@
     UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
     cell.accessoryType = ([item[@"completed"] boolValue]) ? UITableViewCellAccessoryCheckmark : UITableViewCellAccessoryNone;
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
-    
-    NSLog(@"item -> %@", item);
+    [self saveItems];
 };
 
 - (UITableViewCellEditingStyle)tableView:(UITableView *)tableView editingStyleForRowAtIndexPath:(NSIndexPath *)indexPath{
@@ -109,7 +109,28 @@
   
         [self.items removeObjectAtIndex:indexPath.row];
         [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
+        [self saveItems];
     }
+}
+
+#pragma mark - Load todos
+
+- (void)loadItems {
+    // Load saved items from UserDefaults
+    NSArray *savedItems = [[NSUserDefaults standardUserDefaults] objectForKey:@"items"];
+    if (savedItems) {
+        self.items = [NSMutableArray arrayWithArray:savedItems];
+    } else {
+        // If no saved items, initialize with default items
+        self.items = [@[@{@"name": @"Initial task", @"category": @"Private", @"completed": @NO}]
+                         mutableCopy];
+    }
+}
+
+- (void)saveItems {
+    // Save items to UserDefaults
+    [[NSUserDefaults standardUserDefaults] setObject:self.items forKey:@"items"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
 @end
